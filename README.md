@@ -1,6 +1,7 @@
-# tpl-cli
+# tpl-bem-command
 
-Project template for the command line [COA](https://github.com/veged/coa)-based applications.
+Project template for the [bem-tools](http://bem.info/tools/bem/) subcommands.
+Based on [tpl-cli](https://github.com/arikon/tpl-cli).
 
 ## What's inside?
 
@@ -21,4 +22,4 @@ Install [volo](http://volojs.org/)
 
 Create project using template
 
-    volo create your-project-name arikon/tpl-cli
+    volo create your-project-name bem/tpl-bem-command

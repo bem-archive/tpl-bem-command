@@ -1,4 +1,5 @@
-var FS = require('fs');
+var FS = require('fs'),
+    BEM_PREFIX = 'bem-';
 
 module.exports = {
 
@@ -7,35 +8,47 @@ module.exports = {
         var date = new Date(),
             day = date.getDate(),
             month = date.getMonth() + 1,
-            year = date.getFullYear(),
-            projectUpper = projectName.toUpperCase();
+            year = date.getFullYear();
 
         // Add leading zero to month
         if (String(month).length < 2) month = '0' + month;
 
         var dateStr = day + '.' + month + '.' + year;
 
-        v.prompt('Github login:')
-            .then(function(login) {
-                return [login, v.prompt('Author name:')];
+        var defaultCommand = projectName.indexOf(BEM_PREFIX) === 0 ? projectName.slice(BEM_PREFIX.length)
+                                                                   : projectName;
+
+        v.prompt('Command name(' + defaultCommand + '):')
+            .then(function(command) {
+                if (!command || command.length === 0) {
+                    command = defaultCommand;
+                }
+                return [command, v.prompt('Github login:')];
             })
-            .spread(function(login, name) {
+            .spread(function(command, login) {
+                return [command, login, v.prompt('Author name:')];
+            })
+            .spread(function(command, login, name) {
                 return [
+                    command,
                     login,
                     name,
                     v.prompt('Author email:')
                 ];
             })
-            .spread(function(login, name, email) {
+            .spread(function(command, login, name, email) {
                 return [
+                    command,
                     login,
                     name,
                     email,
                     v.prompt('Github path (in organization/repo format):')
                 ];
             })
-            .spread(function(login, name, email, ghPath) {
+            .spread(function(command, login, name, email, ghPath) {
                 var ghUrl = 'github.com/' + ghPath;
+                var packageName = BEM_PREFIX + command,
+                    packageUpper = packageName.toUpperCase();
 
                 // Update the files that reference this project by name
                 [
@@ -45,12 +58,15 @@ module.exports = {
                     'ChangeLog.md',
                     'README.md.in',
                     'LICENSE',
-                    'bin/app.in'
+                    'bin/app.in',
+                    'lib/coa.js',
+                    'lib/command.js'
                 ].forEach(function(file) {
                     var res = v.template(v.read(file), {
-                        app: projectName,
-                        APP: projectUpper,
-                        APP_ENV: projectUpper.replace(/-/g, '_'),
+                        app: packageName,
+                        command: command,
+                        APP: packageUpper,
+                        APP_ENV: packageUpper.replace(/-/g, '_'),
                         authorName: name,
                         authorEmail: email,
                         githubUrl: ghUrl,
@@ -60,19 +76,22 @@ module.exports = {
                         date: dateStr
                     });
                     if (file === 'package.json') {
-                        res = res.replace('"app"', '"' + projectName + '"');
+                        res = res.replace('"app"', '"' + packageName + '"');
                     }
                     v.write(file, res);
                 });
 
                 // Rename bin/app.in to bin/{app} and make it executable
                 var from = 'bin/app.in',
-                    to = 'bin/' + projectName;
+                    to = 'bin/' + packageName;
                 v.mv(from, to);
                 FS.chmodSync(to, '0755');
 
                 // Rename README.md.in to README.md
                 v.mv('README.md.in', 'README.md');
+
+                // Rename command file
+                v.mv('lib/command.js', 'lib/' + command + '.js');
 
                 // Remove this volofile
                 v.rm('volofile');
