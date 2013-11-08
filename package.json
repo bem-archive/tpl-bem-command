@@ -31,7 +31,7 @@
     "coveralls": "*"
   },
   "peerDependecies": {
-    "bem": ">= 1.0.0-alpha1 <= 2.0.0"
+    "bem": ">= 1.0.0-alpha1 < 2.0.0"
   },
   "optionalDependencies": {},
   "scripts": {
